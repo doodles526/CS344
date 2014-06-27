@@ -1,0 +1,22 @@
+Revision Control Systems are pieces of software which help in managing bodies of code.  Typically they have the ability to save the state of a project, and freeze that state onto a tree of all the other past saved states.  For example in git, one would issue a commit.  That commit would be saved onto the commit tree.  And if for some reason you needed to undo some changes, or bring back a feature that was trashed in an earlier commit, you can simply iterate up the tree and bring back the old code.  
+
+Revision control systems are useful in many ways.  In my personal experience, the best argument for revision control is when working in a group of people on a project.  Keeping a central revision control sytem prevents costly errors found when one is emailing files, or working on a shared NFS disk.  Revision control protects this sensitive code from the temptation of copy-paste from file to file, avoiding out of date files, and ultimately keeps everyone from working on old-code if used properly.
+
+A few examples of Revision Control Systems include git, svn, cvs, and darcs.  Fun fact: OSU's very own Dr. David Roundy is the creator, although not current maintainer of darcs.
+
+Commands:
+
+git:
+git init # initializes the git repository
+git push origin master # pushes the current repo(all the data in the local commit tree) onto the remote named origin and branch master and merges the two together on the remote
+git pull origin master # pulls the remote repo named origin(all the data in the remote commit tree) onto the local repo and merges the two together
+
+svn:
+svn checkout URL_PATH # pulls the svn repo found at the URL_PATH and creates a local svn repo
+svn update # pulls the remote svn repo, and merges it with the local svn repo
+svn add FILE# adds the given file or changes in the file to the svn tree
+
+darcs:
+darcs init # initializes the darcs repo
+darcs add FILE # tells darcs to start tracking the file
+darcs whatsnew # informs you of any unrecorded changes to tracked files
