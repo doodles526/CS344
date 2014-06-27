@@ -1,3 +1,3 @@
-Redirection does one of 2 things.  It can take the stdout of a command and put it in a file, or it can send the text in a file to the stdin of a command.
+Redirection does one of 2 things.  It can take the stdout of a utility and put it in a file, or it can send the text in a file to the stdin of a utility.
 
-A pipe simply connects the stdout of a command with the stdin of another, bypassing files completely.
+A pipe simply connects the stdout of a utility with the stdin of another, bypassing files completely.
