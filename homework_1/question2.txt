@@ -16,6 +16,12 @@ svn checkout URL_PATH # pulls the svn repo found at the URL_PATH and creates a l
 svn update # pulls the remote svn repo, and merges it with the local svn repo
 svn add FILE# adds the given file or changes in the file to the svn tree
 
+cvs:
+cvs -d DIRECTORY init # initializes a repository in the given directory
+cvs checkout PROJECT # Grabs a cvs repository and adds it to your local
+filesystem
+cvs add FILE # Registers a file to the cvs repository
+
 darcs:
 darcs init # initializes the darcs repo
 darcs add FILE # tells darcs to start tracking the file
