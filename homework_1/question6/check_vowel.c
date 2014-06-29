@@ -12,14 +12,14 @@
  */
 
 
-#include <stdio.h
+#include <stdio.h>
  
 int main()
 {
   char ch;
  
   printf("Input a character\n");
-  scanf("%c", ch);
+  scanf("%c", &ch);
  
   switch(ch)
   {
@@ -29,14 +29,14 @@ int main()
     case 'E':
     case 'i':
     case 'I':
-    case 'o'
+    case 'o':
     case 'O':
     case 'u':
     case 'U':
-      printf("%c is a vowel.\n", *ch);
+      printf("%c is a vowel.\n", ch);
       break;
     default:
-      printf("%c is not a vowel.\n", &ch);
+      printf("%c is not a vowel.\n", ch);
   }              
  
   return ch;
