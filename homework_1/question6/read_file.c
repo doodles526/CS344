@@ -22,11 +22,14 @@ int main()
  
    printf("Enter the name of file you wish to see\n");
    fgets(file_name, sizeof(file_name), stdin);
-   int i;
-   for (i = 0; i < sizeof(file_name); i++)
-       {	
-       printf("%c", file_name[i]);
-       }
+
+   //Remove the newline char
+   int newbuflen = strlen(file_name);
+   if (file_name[newbuflen-1] == '\n') 
+   {
+      file_name[newbuflen - 1] = '\0';
+   }   
+
    fd = open(file_name, O_RDONLY);
    if (fd < 0)
      {
