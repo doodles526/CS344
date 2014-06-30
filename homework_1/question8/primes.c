@@ -1,3 +1,11 @@
+/*
+ *  Josh Deare
+ *  dearej@onid.orst.edu
+ *  CS311-400
+ *  dearej@onid.orst.edu
+ *
+ */
+
 #include<stdio.h>
 #include<math.h>
 #include<stdlib.h>
@@ -20,50 +28,68 @@ struct PrimeListing primes(int scan_to)
 	primes = (int*)malloc(4 * sizeof(int));
 
 	int num_primes = 0;
-	int i = 2;
-	printf("Before Loop");
-	while (sqrt(i) < scan_to)
+	int k = 2;
+	while (k < sqrt(scan_to))
 	{
-		if (i != COMPOSITE)
+		int m = k;
+		while (num_list[m] == COMPOSITE && m < scan_to)
 		{
-			int h;
-			for (h = 2*i; h < scan_to; h*=2)
-			{
-				num_list[h] = COMPOSITE;
-			}
-			num_list[i] = PRIME;
-			
-			if (sizeof(primes)/sizeof(int) < num_primes)
-			{
-				primes = realloc(primes, sizeof(int) * (num_primes + 4));
-			}
-
-			primes[num_primes] = i;
-			num_primes++;
+			m++;
 		}
-		else 
+		int comp_numbers = 2;
+		while (comp_numbers * m < scan_to)
 		{
-			i++;
+			num_list[comp_numbers * m] = COMPOSITE;
+			comp_numbers++;
 		}
+		if (sizeof(primes)/sizeof(int) < num_primes - 1)
+		{
+			primes = (int*) realloc(primes, (5 + num_primes) * sizeof(int));
+		}	
+		primes[num_primes] = m;
+		num_primes++;
+		k = m + 1;
 	}
-	primes = realloc(primes, sizeof(int) * num_primes);
+	
+	for (; k < scan_to; k++)
+	{
+		if (num_list[k] != COMPOSITE)
+		{
+			if (sizeof(primes)/sizeof(int) < num_primes - 1)
+			{
+				primes = (int*)realloc(primes, (5 + num_primes) * sizeof(int));
+			}	
+			primes[num_primes] = k;
+			num_primes++;
+		}	
+	}	
+
+	primes = (int*)realloc(primes, sizeof(int) * num_primes);
 	struct PrimeListing ret_val = {num_primes, primes};
 	return ret_val;
 }
 
 int main()
 {
-	printf("first thing");
+	printf("There are 6 Primes from 0 - 15: 2, 3, 5, 7, 11, 13.\n");
+	printf("Demonstration of the prime function is printed below.\n\n");
+
 	struct PrimeListing prim = primes(15);
+	printf("Primes up to 15(printed from a returned struct from primes function):\n");
 	printf("Number of Primes: %d\n", prim.count);
 	printf("Listing of Primes\n");
 	int i;
-	for(i = 0; i < sizeof(prim.listing)/sizeof(int); i++)
+	for(i = 0; i < prim.count; i++)
 	{
 		printf("%d", prim.listing[i]);
-		if (i < (sizeof(prim.listing)/sizeof(int) - 1))
+		if (i < prim.count - 1)
 		{
 			printf(", ");
 		}
+		else
+		{
+			printf("\n");
+		}	
 	}
+	return 0;
 }

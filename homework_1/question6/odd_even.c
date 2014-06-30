@@ -1,10 +1,9 @@
 /*
 
-  $RCSfile$
-  $Revision$
-  $Author$
-  $Date$
-  $Log$
+  Josh Deare
+  dearej@onid.orst.edu
+  CS311-400
+  Homework 1
 
   from:
   http://www.programmingsimplified.com/c/source-code/c-program-check-odd-even

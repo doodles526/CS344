@@ -1,3 +1,8 @@
+Josh Deare
+dearej@onid.orst.edu
+CS311-400
+Homework 1
+
 Revision Control Systems are pieces of software which help in managing bodies of code.  Typically they have the ability to save the state of a project, and freeze that state onto a tree of all the other past saved states.  For example in git, one would issue a commit.  That commit would be saved onto the commit tree.  And if for some reason you needed to undo some changes, or bring back a feature that was trashed in an earlier commit, you can simply iterate up the tree and bring back the old code.  
 
 Revision control systems are useful in many ways.  In my personal experience, the best argument for revision control is when working in a group of people on a project.  Keeping a central revision control sytem prevents costly errors found when one is emailing files, or working on a shared NFS disk.  Revision control protects this sensitive code from the temptation of copy-paste from file to file, avoiding out of date files, and ultimately keeps everyone from working on old-code if used properly.

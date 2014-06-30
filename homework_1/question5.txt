@@ -1,1 +1,6 @@
+Josh Deare
+dearej@onid.orst.edu
+CS311-400
+Homework 1
+
 make is a UNIX utility which aids in managing and compiling large code bases.  It does this by seeing which pieces of code have changed since the last make, and ensuring only files, and others which have dependency to them are re-compiled.  Thus substantially minimizing compile time on large projects.

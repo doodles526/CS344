@@ -1,0 +1,8 @@
+primes.c contains both the primes and main function.
+
+primes takes an int, and returns the number of primes between 1 and n and a listing of those primes in a struct
+
+struct PrimeListing{
+	int count
+	int* listing
+}

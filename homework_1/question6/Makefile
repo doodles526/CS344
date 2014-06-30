@@ -1,10 +1,10 @@
 #
-#  $RCSfile$
-#  $Revision$
-#  $Author$
-#  $Date$
-#  $Log$
+#  Josh Deare	 
+#  dearej@onid.orst.edu
+#  CS311-400
+#  Homework 1
 #
+
 
 CC=gcc
 DEBUG=-g

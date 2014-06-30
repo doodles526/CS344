@@ -1,3 +1,8 @@
+Josh Deare
+dearej@onid.orst.edu
+CS311-400
+Homework 1
+
 Redirection does one of 2 things.  It can take the stdout of a utility and put it in a file, or it can send the text in a file to the stdin of a utility.
 
 A pipe simply connects the stdout of a utility with the stdin of another, bypassing files completely.
