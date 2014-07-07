@@ -1,0 +1,19 @@
+/*
+ * Josh Deare
+ * dearej@onid.orst.edu
+ * CS311-400
+ * Homework 2
+ */
+
+(gdb) run bt
+Starting program: /nfs/stak/students/d/dearej/problem8 bt
+
+Program received signal SIGSEGV, Segmentation fault.
+0x000000000040049c in func (ptr=0x0) at problem8.c:11
+11			  ptr[i] = i;
+Missing separate debuginfos, use: debuginfo-install glibc-2.12-1.132.el6.x86_64
+(gdb) print ptr
+$1 = (int *) 0x0
+(gdb) print i
+$2 = 0
+(gdb)
