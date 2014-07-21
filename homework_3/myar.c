@@ -48,7 +48,7 @@ struct ar_hdr* char_array_to_arstruct(char* ar_arr)
 
 // referenced how to memcpy a 2d array here:
 // http://stackoverflow.com/questions/16896209/how-to-memcpy-the-two-dimensional-array-in-c
-char** get_named_files(int argc, char **argv, int option_index, int num_file_args)
+char** get_named_files(char **argv, int option_index)
 {
 //	char** files = (char**)malloc(num_file_args * sizeof(char*));
 //
@@ -228,21 +228,37 @@ int char_array_to_int(char* arr, int num_elements, int base)
 
 // assuming we are seeked to a header
 // otherwise, return NULL
-struct ar_hdr* read_header(int fd)
+//struct ar_hdr* read_header(int fd)
+//{
+//	struct ar_hdr* header = (struct ar_hdr*)malloc(sizeof(struct ar_hdr));
+//
+//	// Read header char_array, and exit if we don't
+//	// read 60 bytes of data
+//	if(read(fd, header, 60) < 0)
+//	{
+//		perror("Improper archive file.");
+//		exit(1);
+//	}
+//
+//	return header;
+//}
+
+// assuming we are seeked to a header
+// otherwise, return NULL
+int read_header(int fd, struct ar_hdr* header)
 {
-	struct ar_hdr* header = (struct ar_hdr*)malloc(sizeof(struct ar_hdr));
+	int read_val = read(fd, header, 60);
 
 	// Read header char_array, and exit if we don't
 	// read 60 bytes of data
-	if(read(fd, header, 60) < 0)
+	if(read_val == -1)
 	{
 		perror("Improper archive file.");
 		exit(1);
 	}
 
-	return header;
+	return read_val;
 }
-
 
 
 // assuming fd is seeked to a member
@@ -313,6 +329,8 @@ struct stat* get_stat(int fd)
 
 }
 
+
+
 // given a file_name, return an ar_hdr struct
 struct ar_hdr* file_to_ar_hdr(char* file_name)
 {
@@ -349,66 +367,6 @@ struct ar_hdr* file_to_ar_hdr(char* file_name)
 	return header;
 }
 
-void print_concise(char* archive_name)
-{
-	int fd = open(archive_name, O_RDONLY);
-
-	struct stat * file_stats = get_stat(fd);
-
-	if(! confirm_armag(fd))
-	{
-		perror("The given file is not a valid archive");
-		exit(1);
-	}
-
-	struct ar_hdr* header;
-
-	do
-	{
-		header = read_header(fd);
-		printf("%s\n", get_ar_name(header));
-	} while(skip_body(fd, header) < file_stats->st_size);
-
-	if(close(fd) == -1)
-	{
-		perror("Couldn't close archive");
-		exit(1);
-	}
-}
-
-
-void print_verbose(char* archive_name)
-{
-	int fd = open(archive_name, O_RDONLY);
-
-	struct stat * file_stats = get_stat(fd);
-
-	if(! confirm_armag(fd))
-	{
-		perror("The given file is not a valid archive");
-		exit(1);
-	}
-
-	struct ar_hdr* header;
-
-	do
-	{
-		header = read_header(fd);
-		printf("%s %d/%d %6i %s %s\n",
-				get_ar_mode_string(header),
-				get_ar_uid(header),
-				get_ar_gid(header),
-				get_ar_size(header),
-				get_ar_date_string(header),
-				get_ar_name(header));
-	} while(skip_body(fd, header) < file_stats->st_size);
-	
-	if(close(fd) == -1)
-	{
-		perror("Couldn't close archive");
-		exit(1);
-	}
-}
 
 // fd_ar must be seeked to a correct position
 // to write a file_in
@@ -426,7 +384,7 @@ void write_to_archive(int fd_ar, char* file_in)
 	int fd_in = open(file_in, O_RDONLY);
 
 	// initialize the buffer
-	char* buffer = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+	char* buffer = (char*)malloc(BLOCK_SIZE);
 
 	while(read(fd_in, buffer, BLOCK_SIZE) == BLOCK_SIZE)
 	{
@@ -449,6 +407,63 @@ void write_to_archive(int fd_ar, char* file_in)
 	if(close(fd_in) == -1)
 	{
 		perror("Problem closing input file");
+		exit(1);
+	}
+}
+
+
+void print_concise(char* archive_name)
+{
+	int fd = open(archive_name, O_RDONLY);
+
+	if(! confirm_armag(fd))
+	{
+		perror("The given file is not a valid archive");
+		exit(1);
+	}
+
+	struct ar_hdr* header = (struct ar_hdr*)malloc(sizeof(struct ar_hdr));
+
+	while(read_header(fd, header))
+	{
+		printf("%s\n", get_ar_name(header));
+		skip_body(fd, header);
+	}
+
+	if(close(fd) == -1)
+	{
+		perror("Couldn't close archive");
+		exit(1);
+	}
+}
+
+
+void print_verbose(char* archive_name)
+{
+	int fd = open(archive_name, O_RDONLY);
+
+	if(! confirm_armag(fd))
+	{
+		perror("The given file is not a valid archive");
+		exit(1);
+	}
+
+	struct ar_hdr* header = (struct ar_hdr*)malloc(sizeof(struct ar_hdr));
+
+	while(read_header(fd, header)) {
+		printf("%s %d/%d %6i %s %s\n",
+				get_ar_mode_string(header),
+				get_ar_uid(header),
+				get_ar_gid(header),
+				get_ar_size(header),
+				get_ar_date_string(header),
+				get_ar_name(header));
+		skip_body(fd, header);
+	} 
+	
+	if(close(fd) == -1)
+	{
+		perror("Couldn't close archive");
 		exit(1);
 	}
 }
@@ -487,6 +502,163 @@ void quick_append_named(char* archive, char** files, int num_files)
 	
 }
 
+// pass a header, char** and *num_files
+// returns the matching char, removes it from files
+// and decrements num_files by 1
+char* pop_from_files(struct ar_hdr* header, char** files, int* num_files)
+{
+	char* name = get_ar_name(header);
+	for(int i = 0; i < *num_files; i++)
+	{
+		if(strcmp(name, files[i]) == 0)
+		{
+			char* temp = files[i];
+			for(int j = i; j < *num_files - 1; j++)
+			{
+				files[j] = files[j+1];
+			}
+			*num_files = *num_files - 1;
+			return temp;
+		}
+	}
+	return NULL;
+}
+
+void write_body_to_file(int fd_in, int fd_out, struct ar_hdr* header)
+{
+	char* buffer = (char*)malloc(get_ar_size(header));
+	if(read(fd_in, buffer, get_ar_size(header)) != get_ar_size(header))
+	{
+		perror("Error reading body");
+		exit(1);
+	}
+	if(write(fd_out, buffer, get_ar_size(header)) == -1)
+	{
+		perror("Error moving archive body to another file");
+		exit(1);
+	}
+	
+}
+
+// Modify proper mode and time to file
+// as well as UID and GID
+// we assume the ar_name in header is a file
+// in the pwd
+void mod_mode_and_time(struct ar_hdr* header)
+{
+	char* filename = get_ar_name(header);
+
+	// update UID and GID
+	if(chown(filename, get_ar_uid(header), get_ar_gid(header)) == -1)
+	{
+		perror("Problem changing file UID and GID");
+		exit(1);
+	}
+
+	// update mode
+	if(chmod(filename, get_ar_mode(header)) == -1)
+	{
+		perror("Problem changing file perms");
+		exit(1);
+	}
+
+	// update time
+	struct utimbuf* times = (struct utimbuf*)malloc(sizeof(struct utimbuf));
+	times->actime = get_ar_date(header);
+	time_t now;
+	time(&now);
+	times->modtime = now;
+	utime(filename, times);
+}
+
+void extract_member(int fd_ar, struct ar_hdr* header)
+{
+	// overwriting file as per @154
+	int fd_out = open(get_ar_name(header), O_WRONLY | O_TRUNC | O_CREAT);
+	if(fd_out == -1)
+	{
+		perror("Fault initializing file descriptor");
+		exit(1);
+	}
+	write_body_to_file(fd_ar, fd_out, header);
+
+	// remember to handle odd/even
+	if((get_ar_size(header) % 2) != 0)
+	{
+		if(lseek(fd_ar, 1, SEEK_CUR) == -1)
+		{
+			perror("Problem tracking over odd byte");
+			exit(1);
+		}
+	}
+
+	if(close(fd_out) == -1)
+	{
+		perror("Problem closing output file");
+		exit(1);
+	}
+
+	// restoring permissions and time
+	mod_mode_and_time(header);
+
+}
+
+// overwrites existing files as
+// referenced from @154
+void extract_members(char* archive, char**files, int num_files)
+{
+	int fd = open(archive, O_RDONLY);
+	if(fd == -1)
+	{
+		perror("Problem opening archive");
+		exit(1);
+	}
+	
+	if(! confirm_armag(fd))
+	{
+		perror("The given file is not a valid archive");
+		exit(1);
+	}
+
+	struct ar_hdr* header = (struct ar_hdr*)malloc(sizeof(struct ar_hdr));
+
+	while(read_header(fd, header))
+	{
+		if(num_files == 0)
+		{
+			extract_member(fd, header);
+		}
+		else
+		{
+			char* temp = pop_from_files(header, files, &num_files);
+			if(temp == NULL)
+			{
+				skip_body(fd, header);
+			}
+			else
+			{
+				extract_member(fd, header);
+				// if that pop zeroed us
+				// then break or else
+				// we will output the rest 
+				// of all the files to the
+				// end of the archive
+				if(num_files == 0)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+
+	if(close(fd) == -1)
+	{
+		perror("Couldn't close archive");
+		exit(1);
+	}
+}
+
 int main(int argc, char **argv)
 {
 
@@ -507,12 +679,21 @@ int main(int argc, char **argv)
 		{
 			case 'q':
 				num_file_args = argc - optind;
-				quick_append_named(optarg, get_named_files(argc, argv, optind, num_file_args), num_file_args);
+				quick_append_named(
+						optarg,
+						get_named_files(argv,
+							optind),
+						num_file_args);
 				break;
 
 			case 'x':
 				num_file_args = argc - optind;
-				printf("Extract named members");
+				extract_members(
+						optarg,
+						get_named_files(
+							argv, 
+							optind), 
+						num_file_args);
 				break;
 
 			case 't':
