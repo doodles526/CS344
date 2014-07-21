@@ -3,5 +3,12 @@
 #include <time.h>
 #include <ar.h>
 #include <string.h>
+#include <getopt.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <libgen.h>
 
-char* arstruct_to_char_array(struct ar_hdr*);
+#define BLOCK_SIZE 1

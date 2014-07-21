@@ -22,8 +22,11 @@ myar.o: myar.h myar.c
 unittest1: unittest1.c myar.o fixtures.o
 	$(CC) $(CFLAGS) -o unittest1 unittest1.c myar.o
 
+unittest2: unittest2.c myar.o fixtures.o
+	$(CC) $(CFLAGS) -o unittest2 unittest2.c myar.o
+
 fixtures.o: fixtures.c 
 	$(CC) $(CFLAGS) -c fixtures.c
 
 clean:
-	rm -f *.o *~ $(PROGS)
+	rm -f *.o *~ $(PROGS) $(TESTS)
