@@ -50,17 +50,17 @@ struct ar_hdr* char_array_to_arstruct(char* ar_arr)
 // http://stackoverflow.com/questions/16896209/how-to-memcpy-the-two-dimensional-array-in-c
 char** get_named_files(int argc, char **argv, int option_index, int num_file_args)
 {
-	char** files = (char**)malloc(num_file_args * sizeof(char*));
+//	char** files = (char**)malloc(num_file_args * sizeof(char*));
+//
+//	// this parses all argv from the end of '-' options and
+//	// values to the end of argv
+//	for(int i = option_index; i < argc; i++)
+//	{
+//		files[i - option_index] = (char*)malloc(sizeof(argv[i]));
+//		memcpy(files[i - option_index], argv[i], sizeof(argv[i]));
+//	}
 
-	// this parses all argv from the end of '-' options and
-	// values to the end of argv
-	for(int i = option_index; i < argc; i++)
-	{
-		files[i - option_index] = (char*)malloc(sizeof(argv[i]));
-		memcpy(files[i - option_index], argv[i], sizeof(argv[i]));
-	}
-
-	return files;
+	return argv + (sizeof(char) * option_index);
 }
 
 // Returns a \0 terminated string of
