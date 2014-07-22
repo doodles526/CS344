@@ -367,6 +367,113 @@ struct ar_hdr* file_to_ar_hdr(char* file_name)
 	return header;
 }
 
+// pass a header, char** and *num_files
+// returns the matching char, removes it from files
+// and decrements num_files by 1
+char* pop_from_files(struct ar_hdr* header, char** files, int* num_files)
+{
+	char* name = get_ar_name(header);
+	for(int i = 0; i < *num_files; i++)
+	{
+		if(strcmp(name, files[i]) == 0)
+		{
+			char* temp = files[i];
+			for(int j = i; j < *num_files - 1; j++)
+			{
+				files[j] = files[j+1];
+			}
+			*num_files = *num_files - 1;
+			return temp;
+		}
+	}
+	return NULL;
+}
+
+int body_to_buffer(int fd_ar, char* buffer, struct ar_hdr* header)
+{
+	int read_val = read(fd_ar, buffer, get_ar_size(header));
+	if(read_val != get_ar_size(header))
+	{
+		perror("Error reading body");
+		exit(1);
+	}
+	return read_val;
+}
+void write_body_to_file(int fd_in, int fd_out, struct ar_hdr* header)
+{
+	char* buffer = (char*)malloc(get_ar_size(header));
+	body_to_buffer(fd_in, buffer, header);
+	if(write(fd_out, buffer, get_ar_size(header)) == -1)
+	{
+		perror("Error moving archive body to another file");
+		exit(1);
+	}
+	
+}
+
+// Modify proper mode and time to file
+// as well as UID and GID
+// we assume the ar_name in header is a file
+// in the pwd
+void mod_mode_and_time(struct ar_hdr* header)
+{
+	char* filename = get_ar_name(header);
+
+	// update UID and GID
+	if(chown(filename, get_ar_uid(header), get_ar_gid(header)) == -1)
+	{
+		perror("Problem changing file UID and GID");
+		exit(1);
+	}
+
+	// update mode
+	if(chmod(filename, get_ar_mode(header)) == -1)
+	{
+		perror("Problem changing file perms");
+		exit(1);
+	}
+
+	// update time
+	struct utimbuf* times = (struct utimbuf*)malloc(sizeof(struct utimbuf));
+	times->actime = get_ar_date(header);
+	time_t now;
+	time(&now);
+	times->modtime = now;
+	utime(filename, times);
+}
+
+void extract_member(int fd_ar, struct ar_hdr* header)
+{
+	// overwriting file as per @154
+	int fd_out = open(get_ar_name(header), O_WRONLY | O_TRUNC | O_CREAT);
+	if(fd_out == -1)
+	{
+		perror("Fault initializing file descriptor");
+		exit(1);
+	}
+	write_body_to_file(fd_ar, fd_out, header);
+
+	// remember to handle odd/even
+	if((get_ar_size(header) % 2) != 0)
+	{
+		if(lseek(fd_ar, 1, SEEK_CUR) == -1)
+		{
+			perror("Problem tracking over odd byte");
+			exit(1);
+		}
+	}
+
+	if(close(fd_out) == -1)
+	{
+		perror("Problem closing output file");
+		exit(1);
+	}
+
+	// restoring permissions and time
+	mod_mode_and_time(header);
+
+}
+
 
 // fd_ar must be seeked to a correct position
 // to write a file_in
@@ -379,7 +486,6 @@ void write_to_archive(int fd_ar, char* file_in)
 		perror("Problem writing header");
 		exit(1);
 	}
-
 	// open the file to be written to the archive
 	int fd_in = open(file_in, O_RDONLY);
 
@@ -397,7 +503,7 @@ void write_to_archive(int fd_ar, char* file_in)
 
 	if((get_ar_size(header) % 2) != 0)
 	{
-		if(write(fd_ar, "\n", sizeof(char) != sizeof(char)))
+		if(write(fd_ar, "\n", sizeof(char)) != sizeof(char))
 		{
 			perror("Error writing newline pad to odd size file");
 			exit(1);
@@ -502,107 +608,6 @@ void quick_append_named(char* archive, char** files, int num_files)
 	
 }
 
-// pass a header, char** and *num_files
-// returns the matching char, removes it from files
-// and decrements num_files by 1
-char* pop_from_files(struct ar_hdr* header, char** files, int* num_files)
-{
-	char* name = get_ar_name(header);
-	for(int i = 0; i < *num_files; i++)
-	{
-		if(strcmp(name, files[i]) == 0)
-		{
-			char* temp = files[i];
-			for(int j = i; j < *num_files - 1; j++)
-			{
-				files[j] = files[j+1];
-			}
-			*num_files = *num_files - 1;
-			return temp;
-		}
-	}
-	return NULL;
-}
-
-void write_body_to_file(int fd_in, int fd_out, struct ar_hdr* header)
-{
-	char* buffer = (char*)malloc(get_ar_size(header));
-	if(read(fd_in, buffer, get_ar_size(header)) != get_ar_size(header))
-	{
-		perror("Error reading body");
-		exit(1);
-	}
-	if(write(fd_out, buffer, get_ar_size(header)) == -1)
-	{
-		perror("Error moving archive body to another file");
-		exit(1);
-	}
-	
-}
-
-// Modify proper mode and time to file
-// as well as UID and GID
-// we assume the ar_name in header is a file
-// in the pwd
-void mod_mode_and_time(struct ar_hdr* header)
-{
-	char* filename = get_ar_name(header);
-
-	// update UID and GID
-	if(chown(filename, get_ar_uid(header), get_ar_gid(header)) == -1)
-	{
-		perror("Problem changing file UID and GID");
-		exit(1);
-	}
-
-	// update mode
-	if(chmod(filename, get_ar_mode(header)) == -1)
-	{
-		perror("Problem changing file perms");
-		exit(1);
-	}
-
-	// update time
-	struct utimbuf* times = (struct utimbuf*)malloc(sizeof(struct utimbuf));
-	times->actime = get_ar_date(header);
-	time_t now;
-	time(&now);
-	times->modtime = now;
-	utime(filename, times);
-}
-
-void extract_member(int fd_ar, struct ar_hdr* header)
-{
-	// overwriting file as per @154
-	int fd_out = open(get_ar_name(header), O_WRONLY | O_TRUNC | O_CREAT);
-	if(fd_out == -1)
-	{
-		perror("Fault initializing file descriptor");
-		exit(1);
-	}
-	write_body_to_file(fd_ar, fd_out, header);
-
-	// remember to handle odd/even
-	if((get_ar_size(header) % 2) != 0)
-	{
-		if(lseek(fd_ar, 1, SEEK_CUR) == -1)
-		{
-			perror("Problem tracking over odd byte");
-			exit(1);
-		}
-	}
-
-	if(close(fd_out) == -1)
-	{
-		perror("Problem closing output file");
-		exit(1);
-	}
-
-	// restoring permissions and time
-	mod_mode_and_time(header);
-
-}
-
 // overwrites existing files as
 // referenced from @154
 void extract_members(char* archive, char**files, int num_files)
@@ -659,6 +664,88 @@ void extract_members(char* archive, char**files, int num_files)
 	}
 }
 
+void delete_members(char* archive, char** files, int num_files)
+{
+	// cleanly handle no passed files
+	if(num_files == 0)
+	{
+		return;
+	}
+
+	int fd_ar = open(archive, O_RDONLY);
+	if(fd_ar == -1)
+	{
+		perror("Problem opening archive");
+		exit(1);
+	}
+	struct stat* ar_stat = (struct stat*)malloc(sizeof(struct stat));
+	if(fstat(fd_ar, ar_stat) == -1)
+	{
+		perror("Problem statting archive");
+		exit(1);
+	}
+	
+	// use calloc so we know we have \0 at all unused spots when we
+	// write to the new file
+	char* buffer = (char*)calloc(ar_stat->st_size, sizeof(char));
+	int buffer_pos = 0;
+	if((buffer_pos += read(fd_ar, buffer+buffer_pos, SARMAG)) == -1)
+	{
+		perror("Problem reading ARMAG");
+		exit(1);
+	}
+
+	struct ar_hdr * header = (struct ar_hdr*)malloc(sizeof(struct ar_hdr));
+	while(read_header(fd_ar, header))
+	{
+		char* temp = pop_from_files(header, files, &num_files);
+		// Prep the member if not marked for deletion
+		if(temp == NULL)
+		{
+			memcpy(buffer+buffer_pos, header, sizeof(struct ar_hdr));
+			buffer_pos += sizeof(struct ar_hdr);
+			buffer_pos += body_to_buffer(fd_ar, buffer+buffer_pos, header);
+			// handle odd-even items
+			if((get_ar_size(header) % 2) != 0)
+			{
+				buffer[buffer_pos] = '\n';
+				buffer_pos += sizeof(char);
+			}
+		}
+		else
+		{
+			skip_body(fd_ar, header);
+		}
+	}
+	if(close(fd_ar) == -1)
+	{
+		perror("Problem closing old archive");
+		exit(1);
+	}
+	if(unlink(archive) == -1)
+	{
+		perror("Problem deleting old archive");
+		exit(1);
+	}
+
+	int fd_out = open(archive, O_WRONLY | O_CREAT, 0666);
+	if(fd_out == -1)
+	{
+		perror("Problem creating new archive");
+		exit(1);
+	}
+	if(write(fd_out, buffer, buffer_pos) != buffer_pos)
+	{
+		perror("Problem writing data to new archive");
+		exit(1);
+	}
+	if(close(fd_out) == -1)
+	{
+		perror("Problem closing new archive");
+		exit(1);
+	}
+}
+
 int main(int argc, char **argv)
 {
 
@@ -706,7 +793,12 @@ int main(int argc, char **argv)
 
 			case 'd':
 				num_file_args = argc - optind;
-				printf("Delete named files from archive");
+				delete_members(
+						optarg,
+						get_named_files(
+							argv,
+							optind),
+						num_file_args);
 				break;
 			case 'A':
 				printf("Append ALL \"regular\" files in dir");
