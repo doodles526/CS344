@@ -4,6 +4,8 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 extern const char *const sys_siglist[];
 
@@ -20,9 +22,9 @@ void sigusr2_handl(int signal)
 void sigint_handl(int signal)
 {
 	printf("SIGINT has been caught, terminating program\n");
-	// Exit code for termination with SIGINT, referenced from:
-	// http://www.tldp.org/LDP/abs/html/exitcodes.html
-	exit(130);
+	// Async proper exit referenced from:
+	// https://www.securecoding.cert.org/confluence/display/seccode/SIG30-C.+Call+only+asynchronous-safe+functions+within+signal+handlers
+	_exit(EXIT_FAILURE);
 }
 
 int main()
