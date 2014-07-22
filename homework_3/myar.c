@@ -1,50 +1,24 @@
+/*
+ * Josh Deare
+ * dearej@onid.orst.edu
+ * Homewrk 3
+ * CS344-400
+ */
+
 #include "myar.h"
 
 #define _POSIX_SOURCE
 
-
-// Probably unneeded and incorrect after further reading
-char* arstruct_to_char_array(struct ar_hdr *ar_st)
+// converts a non terminated char array with data length
+// of num_elements to an int of base specified
+int char_array_to_int(char* arr, int num_elements, int base)
 {
-	char *ar_char = (char*)malloc(sizeof(char) * 60);
+	char* copy_arr = (char*)malloc(sizeof(char) * (num_elements+1));
+	memcpy(copy_arr, arr, sizeof(char) * num_elements);
+	copy_arr[num_elements] = '\0';
 
-	// copy the contents of our struct to an array
-	memcpy(ar_char, ar_st, sizeof(char) * 60);
-
-	// replace all NULL values with spaces
-	for(int i = 0; i < 60; i++)
-	{
-		if(ar_char[i] == '\0')
-		{
-			ar_char[i] = ' ';
-		}
-	}
-
-	// return the char array
-	return ar_char;
+	return strtol(copy_arr, NULL, base);
 }
-
-// Probably unneeded and incorrect after further reading
-struct ar_hdr* char_array_to_arstruct(char* ar_arr)
-{
-	// Convert all spaces to \0
-	for(int i = 0; i < 60; i++)
-	{
-		if(ar_arr[i] == ' ')
-		{
-			ar_arr[i] = '\0';
-		}
-	}
-	
-	// Create the struct
-	struct ar_hdr *ar_st = (struct ar_hdr*)malloc(sizeof(struct ar_hdr));
-
-	// Copy the char array tp the struct
-	memcpy(ar_st, ar_arr, sizeof(char) * 60);
-
-	return ar_st;
-}
-
 
 // referenced how to memcpy a 2d array here:
 // http://stackoverflow.com/questions/16896209/how-to-memcpy-the-two-dimensional-array-in-c
@@ -214,16 +188,6 @@ char* get_ar_date_string(struct ar_hdr* header)
 }
 
 
-// converts a non terminated char array with data length
-// of num_elements to an int of base specified
-int char_array_to_int(char* arr, int num_elements, int base)
-{
-	char* copy_arr = (char*)malloc(sizeof(char) * (num_elements+1));
-	memcpy(copy_arr, arr, sizeof(char) * num_elements);
-	copy_arr[num_elements] = '\0';
-
-	return strtol(copy_arr, NULL, base);
-}
 
 
 // assuming we are seeked to a header
@@ -746,6 +710,68 @@ void delete_members(char* archive, char** files, int num_files)
 	}
 }
 
+void append_all(char* archive)
+{
+	int fd;
+	fd = open(archive, O_WRONLY | O_APPEND | O_EXCL | O_CREAT, 0666);
+	
+	// handle the case of file existing
+	if(fd == -1)
+	{
+		fd = open(archive, O_WRONLY | O_APPEND);
+		if(fd == -1)
+		{
+			perror("Archive not opening properly");
+			exit(1);
+		}
+	}
+	else if(write(fd, ARMAG, SARMAG) != SARMAG)
+	{
+		perror("Archive not allowing use to write ARMAG");
+		exit(1);
+	}
+
+	// DIR usage referenced from:
+	// http://stackoverflow.com/questions/6251019/listing-only-regular-files-problem-with-stat
+	DIR* dir = NULL;
+	struct dirent* element = NULL;
+	// open current dir
+	dir = opendir("./");
+	if(dir == NULL)
+	{
+		perror("Problem opening DIR");
+		exit(1);
+	}
+	/*
+	 *  Definition of a regular File!
+	 *  a regular file is one we would normally open in an editor
+	 *  or perhaps a binary file. Basically, it's a not special type
+	 *
+	 *  It is not a directory, symbolic link, named pipe, socket,
+	 *  device file, nor a door.
+	 *
+	 *  Reference:
+	 *  http://en.wikipedia.org/wiki/Unix_file_types
+	 */
+	struct stat* stat_st = (struct stat*)malloc(sizeof(struct stat));
+	
+	while((element = readdir(dir)))
+	{
+		if(stat(element->d_name, stat_st) == -1)
+		{
+			perror("Problem statting the element");
+			exit(1);
+		}
+		if(S_ISREG(stat_st->st_mode))
+		{
+			if(strcmp(archive, element->d_name))
+			{
+				write_to_archive(fd, element->d_name);
+			}
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
 
@@ -801,7 +827,7 @@ int main(int argc, char **argv)
 						num_file_args);
 				break;
 			case 'A':
-				printf("Append ALL \"regular\" files in dir");
+				append_all(optarg);
 				break;
 			case 'w':
 				printf("Extra Credit:");

@@ -1,3 +1,10 @@
+/*
+ * Josh Deare
+ * dearej@onid.orst.edu
+ * Homework 3
+ * CS344-400
+ */
+
 #define _POSIX_SOURCE
 #define _BSD_SOURCE
 
