@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	
 	if(argc < 2)
 	{
-		printf("Usage: pipeline [-f outfile]");
+		printf("Usage: pipeline [-f outfile]\n");
 		return 0;
 	}
 	
@@ -32,10 +32,10 @@ int main(int argc, char** argv)
 				outfile = optarg;
 				break;
 			case '?':
-				printf("Usage: pipeline [-f outfile]");
+				printf("Usage: pipeline [-f outfile]\n");
 				break;
 			default:
-				printf("Usage: pipeline [-f outfile]");
+				printf("Usage: pipeline [-f outfile]\n");
 				break;
 		}
 	}
