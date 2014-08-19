@@ -1,0 +1,48 @@
+Josh Deare
+CS344-400
+dearej@onid.orst.edu
+HW#5
+
+For my algorithm I chose to implement a Segmented Sieve of Erotasthenes as documented here: http://programmingpraxis.com/2010/02/05/segmented-sieve-of-eratosthenes/
+
+Note: The equation the use in finding the offsets in that link for each segment is wrong, so I made up my own.
+
+My program has 3 main sections, a master, a set of workers, and a printer.
+
+Setup:
+Determine how many numbers each process/thread will work on.
+Determine the size of the bit array(note: I wanted to ovoid having to use locks so I could speed up the program, to do this I needed to have each process/thread have ownership of an entire range of char*'s without overlap. in order to free up space, I halved my space complexity by only having bits represent the composite/prime state of odd numbers)
+
+start up all the nescessary workers.
+Start up the printer.
+Start the master.
+
+Join/wait
+
+Roles:
+Master:
+	The master calculates all the primes between 1 and the sqrt of MAX_PRIME.  As the master finds primes, it sends them in a pipe to each of the workers. 
+	Finally, after sending all the primes between1 and sqrt(MAX_PRIME), the master iterates over the primes it is responsible for, and sends all twin-primes over a pipe to the printer.
+
+
+Worker:
+	Each worker works over a range of (MAX_PRIME - sqrt(MAX_PRIME))/num_concurency numbers.
+	What information each worker knows:
+		The base of the bit_array for it to work on(this is relative 0)
+		The starting number it is analyzing
+		The number of numbers it is to analyze
+		All the primes < sqrt(MAX_PRIME) as provided through a pipe from the master
+		The pipe to send all twin-primes to the printer.
+	
+	When a worker receives a prime from the master, it first determines the offset to the first divisor of it, relative to the starting number.  
+	It then marks all the multiples of the prime in it's section of the bit array.
+
+	After marking all the non-primes, we iterate through our list of primes, and send the twin-primes to the printer.
+
+	To achieve additional speedup, since we know that all twin primes except 3-5 are of the form (6n-1, 6n+1) we only check values of that form for consideration
+
+	Since every worker has ~ the same range of numbers to analyze, all operations are run against a relative 0(the base of bit_array passed in), and all have roughly the same number of operations to perform, the work is very evenly distributed. As can be shown in my best time running prime_pthread at MAX_PRIME with 30 threads at 35 seconds.
+
+
+Printer:
+	The printer is passed an ordered array of pipes.  It simply reads all the data from the pipes, one pipe at a time, and prints it.  Note: This part is absolutely the largest bottleneck! Without this aggregrator and printing directly from each worker, I was able to find MAX_PRIME in under 7 seconds, however with this my time increased to the high 30's and low 40's
