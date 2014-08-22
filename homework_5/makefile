@@ -1,4 +1,7 @@
-
+#Josh Deare
+#CS344-400
+#dearej@onid.orst.edu
+#hw5
 CC=gcc
 DEBUG=-g
 CFLAGS=$(DEBUG) -Wall -Wshadow -Wunreachable-code -Wredundant-decls -Wmissing-declarations -Wold-style-definition -Wmissing-prototypes -Wdeclaration-after-statement -std=c99 -lm 

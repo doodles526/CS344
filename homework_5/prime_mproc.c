@@ -1,3 +1,11 @@
+/*Josh Deare
+ *CS344-400
+ *dearej@onid.orst.edu
+ *hw5
+ *
+ *
+ */
+
 #define _POSIX_SOURCE
 #define _BSD_SOURCE
 #include <unistd.h>
@@ -388,13 +396,7 @@ int main(int argc, char** argv)
 	unsigned int current_upper = 0;
 	unsigned int current_base = 0;
 
-	if(argc < 2)
-	{
-		printf("Usage ");
-		return 0;
-	}
-
-	while((c = getopt(argc, argv, "qm:c:")) != -1)
+	while((c = getopt(argc, argv, "qmc:")) != -1)
 	{
 		switch(c)
 		{
